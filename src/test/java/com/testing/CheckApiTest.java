@@ -1,6 +1,11 @@
 package com.testing;
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
+import org.apache.commons.httpclient.HttpStatus;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,6 +20,9 @@ public class CheckApiTest {
 
     private static RequestSpecification requestSpecification;
 
+    private static ResponseSpecification responseSpecification;
+
+
 
     @BeforeAll
     public static void setUrl()
@@ -22,6 +30,12 @@ public class CheckApiTest {
         requestSpecification= new RequestSpecBuilder()
                 .setBaseUri("http://zippopotam.us")
                 .build();
+
+        responseSpecification = new ResponseSpecBuilder()
+                .expectStatusCode(HttpStatus.SC_ACCEPTED)
+                .expectContentType(ContentType.JSON)
+                .build();
+
     }
 
     public static Object [] [] zipCodesAndPlaces()
@@ -35,6 +49,15 @@ public class CheckApiTest {
     }
 
 
+    @Test
+    public void extractData()
+    {
+        String placeName= given().spec(requestSpecification).
+                when().get("/us/90210")
+                .then().extract().path("places[0].'place name'");
+
+        Assert.assertEquals(placeName,"Beverly Hill");
+    }
 
     @Test
     public void requestUsZipCode90210_logRequestAndLogResponse()
@@ -42,7 +65,7 @@ public class CheckApiTest {
 
         given().spec(requestSpecification).log().all().
                 when().get("/us/90210").
-                then().log().body();
+                then().spec(responseSpecification).log().body();
      }
 
      @ParameterizedTest
